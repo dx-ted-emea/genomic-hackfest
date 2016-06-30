@@ -59,7 +59,7 @@ make
 
 You need to login into Azure portal, goto Storage Account blade and create new (or use existing storage account ) - as soon as it created you need to get account name and key ( you can you primary key as well as secondary ). Note keys and account name from example are used as example and shouldn't be used in real life ( almost because this storage account is non exists :-))
 
-![Azure portal](/img/storage_credentials.png)
+![Azure portal](./img/storage_credentials.png)
 
 
 ## Usage of binary 'genomicstorage'
