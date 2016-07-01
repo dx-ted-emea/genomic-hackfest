@@ -20,6 +20,12 @@
 * [Command line (powershell) modules for installing/conf Azure Pack] (https://github.com/PowerShell/xAzurePack)
 
 
+### Azure Pack API
+* [Azure Pack Developers Kit (incl. all API references, samples )] (https://msdn.microsoft.com/en-us/library/dn448665.aspx)
+* [Azure Pack Resource Providers API] (https://msdn.microsoft.com/en-us/library/dn629552.aspx)
+* [Azure Pack VM collections API] (https://msdn.microsoft.com/en-us/library/dn785091.aspx)
+
+
 ### Usefull administrative tools
 
 * [Cool VHD manage tools] (https://github.com/Microsoft/azure-vhd-utils) : This project provides a Go package to read Virtual Hard Disk (VHD) file, a CLI interface to upload local VHD to Azure storage and to inspect a local VHD.
