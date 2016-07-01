@@ -18,6 +18,7 @@
 * [Powershell for Azure Pack] (https://blogs.technet.microsoft.com/hybridcloud/2016/01/19/powershell-for-azure-pack-tenants/)
 * [How to create CentOS images for Azure Pack] (https://blogs.technet.microsoft.com/hybridcloud/2016/01/20/centos-7-template-for-azure-pack/)
 * [Command line (powershell) modules for installing/conf Azure Pack] (https://github.com/PowerShell/xAzurePack)
+* [Azure Pack - lesson learned](http://www.hyper-v.nu/archives/mvaneijk/2014/06/windows-azure-pack-high-availability-lessons-learned/)
 
 
 ### Azure Pack API
