@@ -1,0 +1,27 @@
+[logging]
+ default = FILE:/var/log/krb5libs.log
+ kdc = FILE:/var/log/krb5kdc.log
+ admin_server = FILE:/var/log/kadmind.log
+
+[libdefaults]
+ default_realm = @U@
+ dns_lookup_realm = false
+ ticket_lifetime = 8h
+ renew_lifetime = 1d
+ forwardable = true
+ rdns = false
+ default_ccache_name = KEYRING:persistent:%{uid}
+ fcc-mit-ticketflags = true
+ default_tgs_enctypes = aes256-cts arcfour-hmac-md5 des3-hmac-sha1 des-cbc-crc des-cbc-md5
+ default_tkt_enctypes = aes256-cts arcfour-hmac-md5 des3-hmac-sha1 des-cbc-crc des-cbc-md5
+ permitted_enctypes = aes256-cts arcfour-hmac-md5 des3-hmac-sha1 des-cbc-crc des-cbc-md5
+
+[realms]
+@U@ = {
+ @K@
+ admin_server = @k@
+}
+
+[domain_realm]
+ .@d@ = @U@
+ @d@  = @U@

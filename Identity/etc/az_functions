@@ -1,0 +1,186 @@
+#
+# Common functions to be used in the scripts
+#
+if [ -z "$az_base" ]; then
+    . $(dirname "$0")/../etc/az_defs
+fi
+
+# We use channel 3 for tracing
+exec 3>&2
+
+# Exit with an error message.
+# Arg 1 : The error message
+az_exit() {
+    echo "$1" >&2
+    exit 1
+}
+
+# Check wether we run privileged and exit with an error message if not
+az_ensure_root() {
+    if [ $UID -ne 0 ]; then
+	az_exit "Fatal error. Must run as root."
+    fi
+}
+
+# This script tries to discover the Active Directory domain controllers
+# for this computer. It assumes that DNS is set up properly to find
+# the DCs. It is called without arguments and returns a list of hostnames.
+# Each of these hosts is a domain controller.
+az_discover_ad_dc() {
+    local h
+    local res
+    local f
+    res=1
+    if [ -z "$az_dname" ]; then
+	return 1
+    fi
+    f=$(mktemp)
+    LANG=C host -t SOA _msdcs.${az_dname} >$f 2>/dev/null
+    grep -q "has SOA record" < $f
+    if [ ${?} -eq 0 ]; then
+	h=$(grep "has SOA record" < $f | awk '{print $5}')
+	LANG=C host -t SRV _ldap._tcp.${az_dname} $h >$f 2>/dev/null
+	grep -q "has SRV record" < $f
+	if [ ${?} -eq 0 ]; then
+	    grep "has SRV record" < $f | awk '{print $8}' 
+	    res=0
+	fi
+    else
+	LANG=C host -t SRV _ldap._tcp.${az_dname} > $f 2>/dev/null
+	grep -q "has SRV record" < $f
+	if [ ${?} -eq 0 ]; then
+	    grep "has SRV record"  < $f | awk '{print $8}' 
+	    res=0
+	else
+	    LANG=C host -t A ${az_dname} > $f 2>/dev/null
+	    grep -q "has address" < $f
+	    if [ $? -eq 0 ]; then
+		h=$(grep "has address" < $f | awk '{print $4}' | head -n 1)
+		LANG=C host -t SRV _ldap._tcp.${az_dname} $h > $f 2>/dev/null
+		grep -q "has SRV record" < $f
+		if [ ${?} -eq 0 ]; then
+		    grep "has SRV record" < $f | awk '{print $8}' 
+		    res=0
+		fi
+	    fi
+	fi
+    fi
+    rm -f $f
+    return ${res}
+}
+
+# Return the numer of processors
+az_number_of_processors () {
+    cat /proc/cpuinfo | grep ^processor | wc -l
+}
+
+# Check whether or not this is a known OS
+az_is_known_os() {
+    [ $az_os -ne $AZ_OS_UNKNOWN ]
+}
+
+# Check for the existence of a package.
+# Arg 1   : the package name
+# Return : 0 if package was found, <> 0 otherwise
+az_check_package()  {
+    if [ $# -ne 1 ]; then
+	az_exit  "Error, $0 expects an argument."
+    fi
+    case "$az_os_family" in
+	$AZ_OS_FAMILY_DEBIAN)
+	    dpkg -l $1 2>/dev/null | grep -q ^ii
+	    ;;
+	$AZ_OS_FAMILY_REDHAT)
+	    yum list installed $1 >/dev/null 2>&1
+	    ;;
+	$AZ_OS_FAMILY_ARCHLINUX)
+	    pacman -Q $1 >/dev/null 2>&1
+	    ;;
+	*)
+	    az_exit "Not supported package format."
+    esac
+}
+
+# Check for the existence of a package, if it doesn't exist, install it.
+# Arg 1   : the package name
+# Return : 0 if package is installed, <> 0 otherwise
+az_ensure_package() {
+    if [ $# -eq 1 ]; then
+        echo -n "Looking for package ${1}..." >&3
+	case "$az_os_family" in
+	    $AZ_OS_FAMILY_DEBIAN)
+		dpkg -l $1 2>/dev/null | grep -q ^ii
+		if [ $? -ne 0 ]; then
+		    echo " not found. Installing... " >&3
+		    az_ensure_root
+		    apt-get -y install $1 >/dev/null 2>&1
+		    if [ $? -ne 0 ]; then
+			az_exit "Fatal error: cannot install ${1}."
+		    fi
+		else
+		    echo " found." >&3
+		fi
+		;;
+	    $AZ_OS_FAMILY_REDHAT)
+		yum list installed $1 >/dev/null 2>&1
+		if [ $? -ne 0 ]; then
+		    echo " not found. Installing... " >&3
+		    az_ensure_root
+		    yum -y install  $1 >/dev/null 2>&1
+		    if [ $? -ne 0 ]; then
+			az_exit "Fatal error: cannot install ${1}."
+		    fi
+		else
+		    echo " found." >&3
+		fi
+		;;
+	    $AZ_OS_FAMILY_ARCHLINUX)
+		pacman -Q $1 >/dev/null 2>&1
+		if [ $? -ne 0 ]; then
+		    echo " not found. Installing... " >&3
+		    az_ensure_root
+		    pacman -S --noconfirm $1 >/dev/null 2>&1
+		    if [ $? -ne 0 ]; then
+			az_exit "Fatal error: cannot install ${1}."
+		    fi
+		else
+		    echo " found." >&3
+		fi
+		;;
+	    *)
+		az_exit "Not supported package format."
+	esac
+    fi
+}
+
+# Check wether we run an Azure. This is simply done by checking for the
+# installation of the Agent. We assume the Agent isn't installed when
+# not running on Azure
+# Return : 0 if we are on Azure, <> 0 otherwise
+az_is_azure() {
+    case "$az_os_family" in
+	$AZ_OS_FAMILY_DEBIAN)
+	    az_check_package walinuxagent
+	    ;;
+	$AZ_OS_FAMILY_REDHAT)
+	    az_check_package WALinuxAgent
+	    ;;
+	*)
+	    return 1
+	    ;;
+    esac
+}
+
+# Default prolog to be used in all scripts that depend on these functions
+# We make sure we are on a known OS and run on Azure
+az_prolog() {
+    az_is_known_os || az_exit "Unsupported OS"
+    az_is_azure || az_exit "We are not running on Azure"
+}
+
+# Default prolog to be used in all scripts that depend on these functions
+# and must run elevated
+az_root_prolog() {
+    az_ensure_root
+    az_prolog
+}

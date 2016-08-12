@@ -1,0 +1,44 @@
+#!/bin/bash
+. $(dirname "$0")/../etc/az_functions
+az_root_prolog
+
+krbcfg=/etc/krb5.conf
+krbtpl=$(dirname $0)/../etc/krb5.template
+if [ ! -f "$krbtpl" ]; then
+    az_exit "File $krbtpl not found."
+fi
+
+pkg=
+case "$az_os_family" in
+    $AZ_OS_FAMILY_DEBIAN)
+	pkg="krb5-user"
+	;;
+    $AZ_OS_FAMILY_REDHAT)
+	pkg="krb5-workstation"
+	;;
+    *)
+	az_exit "Unexpected not supported OS."
+	;;
+esac
+az_check_package "$pkg" || az_exit "Please install prerequisites, missing Kerberos"
+    
+IFS=' ' read -r -a kdcs <<< $(az_discover_ad_dc)
+if [ ${#kdcs[@]} -lt 1 ]; then
+    az_exit "Cannot discover any KDC."
+else
+    f=$(mktemp)
+    for s in ${kdcs[@]}
+    do
+	echo " kdc = $s" >> $f
+    done
+fi
+
+cat "$krbtpl" | sed -e "s/@d@/$az_dname/g" | \
+    sed -e "s/@U@/$az_udname/g"  | \
+    sed -e "s/@k@/${kdcs[0]}/g" | \
+    sed -e "/@K@/r $f" | \
+    sed -e "/@K@/d" > $krbcfg
+chmod 0644 $krbcfg
+rm -f $f
+
+exit 0

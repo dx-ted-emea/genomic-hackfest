@@ -1,0 +1,42 @@
+#
+# Basic defintitions used in the scripts
+# This file is included by the az_functions file
+#
+#
+if [ -z "$az_base" ]; then
+   az_base=$(dirname "$0")
+   if [ ! -f ${az_base}/../etc/az_domain ]; then
+       echo Missing ${az_base}/../etc/az_domain configuration file >&2
+       exit 1
+   fi
+   az_dname=$(cat $az_base/../etc/az_domain)
+   if [ -z "$az_dname" ]; then
+       echo File ${az_base}/../etc/az_domain is empty >&2
+       exit 1
+   fi
+   az_udname=$(echo ${az_dname} | dd conv=ucase 2>/dev/null)
+
+# General OS related constants
+   AZ_OS_UNKNOWN=0
+   AZ_OS_FACTOR=100
+
+# Enumeration of OS families supported
+   AZ_OS_FAMILY_DEBIAN=1
+   AZ_OS_FAMILY_REDHAT=2
+   AZ_OS_FAMILY_ARCHLINUX=3
+
+
+# Enumeration of OS variants supported
+   AZ_OS_DEBIAN=$(expr $AZ_OS_FAMILY_DEBIAN \* $AZ_OS_FACTOR)
+   AZ_OS_UBUNTU=$(expr $AZ_OS_DEBIAN + 1)
+   AZ_OS_REDHAT=$(expr $AZ_OS_FAMILY_REDHAT \* $AZ_OS_FACTOR)
+   AZ_OS_CENTOS=$(expr $AZ_OS_REDHAT + 1)
+   AZ_OS_ARCHLINUX=$(expr $AZ_OS_FAMILY_ARCHLINUX \* $AZ_OS_FACTOR)
+
+# Determine the OS
+   az_os=$AZ_OS_UNKNOWN
+   grep -qi ubuntu /proc/version && az_os=$AZ_OS_UBUNTU
+   [ $? -ne 0 ] && grep -qi centos /proc/version && az_os=$AZ_OS_CENTOS
+   [ $? -ne 0 ] && grep -qi redhat /proc/version && az_os=$AZ_OS_REDHAT
+fi
+az_os_family=$(expr $az_os / $AZ_OS_FACTOR)

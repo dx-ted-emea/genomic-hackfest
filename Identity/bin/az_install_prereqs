@@ -1,0 +1,27 @@
+#!/bin/bash
+. $(dirname "$0")/../etc/az_functions
+az_root_prolog
+
+if [ $az_os_family -eq $AZ_OS_FAMILY_REDHAT ]; then
+    az_ensure_package realmd
+    az_ensure_package sssd
+    az_ensure_package krb5-workstation
+    az_ensure_package krb5-libs
+    az_ensure_package adcli
+else
+    if [ $az_os_family -eq $AZ_OS_FAMILY_DEBIAN ]; then
+	az_ensure_package realmd
+	az_ensure_package sssd
+	az_ensure_package sssd-tools
+	az_ensure_package krb5-user
+	az_ensure_package samba-common
+	az_ensure_package samba-common-bin
+	az_ensure_package samba-libs
+	az_ensure_package adcli
+	az_ensure_package packagekit
+    else
+	echo Unsupported OS family >&2
+	exit 1
+    fi
+fi
+exit 0
