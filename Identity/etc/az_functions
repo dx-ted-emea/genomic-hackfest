@@ -1,4 +1,5 @@
 #
+# Author: Juergen Pfeifer, Microsoft Corporation
 # Common functions to be used in the scripts
 #
 if [ -z "$az_base" ]; then
