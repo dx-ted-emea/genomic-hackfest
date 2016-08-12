@@ -2,7 +2,7 @@
 ### List of projects with artefacts
 
 * [Using Azure Storage via C++ codebase](Genomic-Storage)
-* [Azure batch for computations tasks](Azure-Batch)
+* [Azure batch for computations tasks](Azure-Batch) (TBD)
 * [Python codebase to work with Azure Batch](https://github.com/benjaminmoules/genomicbatchsample)
 * [Identity with Azure Active Directory](Identity)
 * [Creating a locked-down Desktop environment](Lockdown-Environment)
